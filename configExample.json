@@ -6,7 +6,8 @@
 		"port":3000
 	},
 	"presence":{
-		"show_weapon":true
+		"show_weapon":true,
+		"refresh_rate":3
 	},
 	"startup":{
 		"launch_timeout":60,
