@@ -1,0 +1,15 @@
+{
+	"version":"v1",
+	"configVers":1.0,
+	"GSIServer":{
+		"auth_token":"MYTOKENHERE",
+		"port":3000
+	},
+	"presence":{
+		"show_weapon":true
+	},
+	"startup":{
+		"launch_timeout":60,
+		"show_github_link":true
+	}
+}
