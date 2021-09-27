@@ -1,0 +1,5 @@
+*.pyc
+*.pyo
+*.spec
+build
+dist
