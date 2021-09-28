@@ -5,13 +5,24 @@ from .rpc import RPC
 import ctypes
 import threading
 from .systray import systray
+import requests
+import os
+
+def instance_check(address, auth_token):
+    try:
+        res = requests.get(f"http://{address[0]}:{address[1]}/data", params={"auth":auth_token})
+        if res.status_code == 200:
+            os._exit(1)
+    except:
+        pass
 
 def main():
     Config = config.Config()
-    conf = Config.fetchConfig()
+    conf = Config.checkConfig()
     appdata = Config.get_appdata_folder()
     rpc_client = pypresence.Presence(874499526910701598)
     address = ("127.0.0.1", conf["GSIServer"]['port'])
+    instance_check(address, conf["GSIServer"]['auth_token'])
     rpc_client.connect()
     data = {
         "details":"Loading...",
@@ -24,7 +35,7 @@ def main():
         data['buttons'] = []
         data['buttons'].append({"label":"View on GitHub", "url":"https://github.com/keivsc/CSGO-RPC"})
     rpc_client.update(**data)
-    systrayThread = threading.Thread(target=systray().run)
+    systrayThread = threading.Thread(target=systray(conf).run)
     systrayThread.start()
     steam.run_game(appdata, conf)
     rpc = RPC(rpc_client, address, conf)

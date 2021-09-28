@@ -26,6 +26,7 @@ HotKey=0""")
 def run_game(appdata, config):
     launch_timeout = config["startup"]["launch_timeout"]
     launch_timer = 0
+    os.system('cls')
     if not are_processes_running():
         startCS(appdata)
     while not are_processes_running():

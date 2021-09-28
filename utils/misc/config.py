@@ -5,6 +5,15 @@ import os
 import sys, time
 from plyer import notification
 from colorama import Fore
+import sys
+import winreg, traceback
+
+class SteamNotFound(Exception):
+    pass
+class CSNotInstalled(Exception):
+    pass
+class CFGNotCreated(Exception):
+    pass
 
 def fetchTag():
     req = requests.get("https://api.github.com/repos/keivsc/csgo-rpc/releases/latest")
@@ -22,9 +31,55 @@ translationFile = {}
 def configActivate():
     globals()['latestConfig'] = (requests.get(f"https://raw.githubusercontent.com/keivsc/csgo-rpc/{currentVersion}/configExample.json")).json()
 
+def get_steam_path():
+    try:
+        hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\Valve\Steam")
+    except:
+        hkey = None
+    try:
+        steam_path = winreg.QueryValueEx(hkey, "InstallPath")
+    except:
+        steam_path = None
+    if steam_path == None:
+        raise SteamNotFound("Unable to find steam installation path")
+    return steam_path[0]
+
+def create_cfg(steam_path):
+    csgo_path = steam_path+r"\steamapps\common\Counter-Strike Global Offensive"
+    if os.path.isdir(csgo_path):
+        cfg_path = csgo_path+r"\csgo\cfg\gamestate_integration_csgorpc.cfg"
+        if os.path.isfile(cfg_path):
+            return True, cfg_path
+        try:
+            with open(cfg_path, 'a+') as f:
+                res = requests.get("https://raw.githubusercontent.com/keivsc/CSGO-RPC/v1/gamestate_integration_csgorpc.cfg")
+                f.write(str(res.content.decode('utf-8')))
+                f.close()
+        except:
+            return False, cfg_path
+        return True, cfg_path
+    else:
+        raise CSNotInstalled("CS:GO is not installed on this machine!")
+
 class Config:
     def __init__(self) -> None:
         configActivate()
+        print(f"Checking for gamestate integration cfg file...")
+        try:
+            cfg, cfg_path = create_cfg(get_steam_path())
+            print(cfg, cfg_path)
+        except Exception as e:
+            traceback.print_exc()
+            input(e)
+        else:
+            if cfg == False:
+                print(f"Unable to create gamestate_integration.cfg\nManually download gamestate cfg from the github and paste it into {cfg_path}")
+                input("Press enter to continue...")
+                cfg, cfg_path = create_cfg(get_steam_path())
+                if cfg == False:
+                    os._exit(1)
+        os.system('cls')
+        print(f"{cfg_path} Found!")
 
     @staticmethod 
     def get_path(relative_path):
@@ -32,12 +87,11 @@ class Config:
             return os.path.join(sys._MEIPASS, relative_path)
         return os.path.join(os.path.abspath("."), relative_path)
 
-    @staticmethod
-    def checkVersion():
+    def checkVersion(self):
         try:
-            newConf = Config.fetchConfig()
+            newConf = self.fetchConfig()
             newConf['version'] = currentVersion
-            Config.updateConf(newConf)
+            self.updateConf(newConf)
             if latestVersion != currentVersion:
                 print(f"{Fore.YELLOW}There is a new version of CSGO-RPC ({currentVersion} -> v{latestVersion})\n{Fore.GREEN}Download it at\nhttps://github.com/keivsc/CSGO-RPC/releases/latest")
                 return True
@@ -45,73 +99,45 @@ class Config:
             print(f"{Fore.RED}Unable to check for new versions")
             
 
-    @staticmethod
-    def checkConfig():
-        config = Config().fetchConfig()
+    def checkConfig(self):
         newConf = latestConfig
         newConf['version'] = currentVersion
-        if Config.checkVersion() == True:
+        conf = self.updateConf(newConf)
+        if self.checkVersion() == True:
             notification.notify(
                 title='New Version of RPC is available',
                 message='Check out keivsc/CSGO-RPC for the new version!',
-                app_icon=Config.get_path(os.path.join(Config.get_appdata_folder(), 'favicon.ico'))
+                app_icon=self.get_path(os.path.join(self.get_appdata_folder(), 'favicon.ico'))
             )
         else:
             print(f"{Fore.GREEN}CS:GO RPC Up To Date")
-        if config["configVers"] != latestConfig["configVers"]:
-            items = ["configVers", "regions", "languages"]
-            for x in items:
-                newConf[x] = latestConfig[x]
-
-            items = ["region", "clientID", "language", "presenceRefreshRate", "matchSheet"]
-            for item in items:
-                try:
-                    newConf[item] = config[item] 
-                except:
-                    newConf[item] = newConf[item]
-
-            try:
-                newConf["presence"]["show_rank"] = config["presence"]["show_rank"] 
-            except:
-                newConf["presence"]["show_rank"] = True
-
-            try:
-                newConf["startup"]["launch_timeout"] = config["startup"]["launch_timeout"]
-            except:
-                newConf["startup"]["launch_timeout"] = 60
-            
-            config = Config().updateConf(newConf)
         time.sleep(3)
-        return config
+        return conf
 
-    @staticmethod 
-    def get_appdata_folder():
-        return Config().get_path(os.path.join(os.getenv('APPDATA'), 'CSGO-RPC'))
+    def get_appdata_folder(self):
+        return self.get_path(os.path.join(os.getenv('APPDATA'), 'CSGO-RPC'))
 
-    @staticmethod
-    def fetchConfig():
+    def fetchConfig(self):
         try:
-            with open(Config().get_path(os.path.join(Config().get_appdata_folder(), "config.json"))) as f:
+            with open(self.get_path(os.path.join(self.get_appdata_folder(), "config.json"))) as f:
                 config = json.load(f)
                 return config
         except:
-            return Config().createConf()
+            return self.createConf()
     
     @staticmethod
     def getTranslation():
         return translationFile
 
-    @staticmethod
-    def createConf():
-        if not os.path.exists(Config().get_appdata_folder()):
-            os.mkdir(Config().get_appdata_folder())
-        with open(Config().get_path(os.path.join(Config().get_appdata_folder(), "config.json")), "w") as f:
+    def createConf(self):
+        if not os.path.exists(self.get_appdata_folder()):
+            os.mkdir(self.get_appdata_folder())
+        with open(self.get_path(os.path.join(self.get_appdata_folder(), "config.json")), "w") as f:
             latestConfig["version"] = currentVersion
             json.dump(latestConfig, f, indent=4)
-        return Config().fetchConfig()
+        return self.fetchConfig()
 
-    @staticmethod
-    def updateConf(data):
-        with open(Config().get_path(os.path.join(Config().get_appdata_folder(), "config.json")), "w") as f:
+    def updateConf(self, data):
+        with open(self.get_path(os.path.join(self.get_appdata_folder(), "config.json")), "w") as f:
             json.dump(data, f, indent=4)
-        return Config().fetchConfig()
+        return self.fetchConfig()

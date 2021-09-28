@@ -12,9 +12,9 @@ hWnd = kernel32.GetConsoleWindow()
 window_shown = False
 
 class systray:
-    def __init__(self):
+    def __init__(self, config):
         self.Config = Config()
-        self.config = self.Config.fetchConfig()
+        self.config = config
         self.systray = None
 
     def run(self):

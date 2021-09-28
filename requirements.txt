@@ -1,0 +1,10 @@
+pypresence
+vdf
+pystray
+requests
+psutil
+iso8601
+pyperclip
+pillow
+plyer
+colorama

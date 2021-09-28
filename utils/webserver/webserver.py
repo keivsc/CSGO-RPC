@@ -1,7 +1,7 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from operator import attrgetter
 from threading import Thread
-import json, time, traceback
+import json, time, traceback, os
 from .payload_parser import Parser
 from urllib.parse import urlparse, parse_qs
 Parser = Parser()
@@ -24,6 +24,7 @@ class GSIServer(HTTPServer):
                 first_time = False
         except:
             print("Could not start server.")
+            os._exit(1)
         
         else:
             print("GSI Server Started")
