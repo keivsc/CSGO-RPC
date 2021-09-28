@@ -7,6 +7,7 @@ from plyer import notification
 from colorama import Fore
 import sys
 import winreg, traceback
+import vdf, io
 
 class SteamNotFound(Exception):
     pass
@@ -42,7 +43,18 @@ def get_steam_path():
         steam_path = None
     if steam_path == None:
         raise SteamNotFound("Unable to find steam installation path")
-    return steam_path[0]
+    library = steam_path[0]+r"\steamapps\libraryfolders.vdf"
+    file = open(library, 'rb')
+    f = file.read()
+    lib = vdf.parse(io.StringIO(f.decode('utf-8')))
+    items = lib['libraryfolders']
+    items.pop("contentstatsid")
+    for x in list(items.keys()):
+        for y in list(items[x]['apps'].keys()):
+            if y == "730":
+                steam_path = items[x]['path']
+                return steam_path
+    raise CSNotInstalled("CS:GO is not installed on this machine!")
 
 def create_cfg(steam_path):
     csgo_path = steam_path+r"\steamapps\common\Counter-Strike Global Offensive"

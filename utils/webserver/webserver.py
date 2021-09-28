@@ -19,6 +19,7 @@ class GSIServer(HTTPServer):
             thread.start()
             first_time = True
             while self.running == False:
+                print(self.running)
                 if first_time == True:
                     print("CS:GO GSI Server starting..")
                 first_time = False
