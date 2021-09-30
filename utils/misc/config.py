@@ -9,6 +9,8 @@ import sys
 import winreg, traceback
 import vdf, io
 
+log = None
+
 class SteamNotFound(Exception):
     pass
 class CSNotInstalled(Exception):
@@ -53,8 +55,9 @@ def get_steam_path():
         for y in list(items[x]['apps'].keys()):
             if y == "730":
                 steam_path = items[x]['path']
+                log.createLog('LOG', f"Steam Path: {steam_path}")
                 return steam_path
-    raise CSNotInstalled("CS:GO is not installed on this machine!")
+    return steam_path[0]
 
 def create_cfg(steam_path):
     csgo_path = steam_path+r"\steamapps\common\Counter-Strike Global Offensive"
@@ -71,15 +74,18 @@ def create_cfg(steam_path):
             return False, cfg_path
         return True, cfg_path
     else:
+        log.createLog('ERR', f"CS:GO path does not exist: {csgo_path}")
         raise CSNotInstalled("CS:GO is not installed on this machine!")
 
 class Config:
-    def __init__(self) -> None:
-        configActivate()
+    def __init__(self, logger) -> None:
+        self.checkConfig()
+        global log
+        log = logger
         print(f"Checking for gamestate integration cfg file...")
         try:
             cfg, cfg_path = create_cfg(get_steam_path())
-            print(cfg, cfg_path)
+            
         except Exception as e:
             traceback.print_exc()
             input(e)
@@ -92,6 +98,14 @@ class Config:
                     os._exit(1)
         os.system('cls')
         print(f"{cfg_path} Found!")
+        log.createLog('LOG', f'GIS cfg file: {cfg_path}')
+
+    @staticmethod
+    def create_appdata():
+        path = os.path.join(os.getenv('APPDATA'), 'CSGO-RPC')
+        if not os.path.exists(path):
+            os.mkdir(path)
+        return path
 
     @staticmethod 
     def get_path(relative_path):
@@ -112,6 +126,7 @@ class Config:
             
 
     def checkConfig(self):
+        configActivate()
         newConf = latestConfig
         newConf['version'] = currentVersion
         conf = self.updateConf(newConf)
@@ -136,10 +151,6 @@ class Config:
                 return config
         except:
             return self.createConf()
-    
-    @staticmethod
-    def getTranslation():
-        return translationFile
 
     def createConf(self):
         if not os.path.exists(self.get_appdata_folder()):

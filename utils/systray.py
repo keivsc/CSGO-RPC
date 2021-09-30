@@ -1,7 +1,6 @@
 from PIL import Image
 from pystray import Icon as icon, Menu as menu, MenuItem as item
 import ctypes, os, urllib.request, sys, time, pyperclip
-from .misc.config import Config
 from plyer import notification
 from PIL import Image
 
@@ -12,9 +11,9 @@ hWnd = kernel32.GetConsoleWindow()
 window_shown = False
 
 class systray:
-    def __init__(self, config):
-        self.Config = Config()
-        self.config = config
+    def __init__(self, Config):
+        self.Config = Config
+        self.config = self.Config.fetchConfig()
         self.systray = None
 
     def run(self):

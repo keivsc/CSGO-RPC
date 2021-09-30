@@ -7,18 +7,23 @@ import threading
 from .systray import systray
 import requests
 import os
+from .misc.logger import Logging
+
+log = Logging(config.Config.create_appdata())
 
 def instance_check(address, auth_token):
     try:
         res = requests.get(f"http://{address[0]}:{address[1]}/data", params={"auth":auth_token})
         if res.status_code == 200:
+            log.createLog('LOG', f"CSGO-RPC instance already opened, go to http://{address[0]}:{address[1]}/shutdown to close it")
             os._exit(1)
     except:
         pass
 
 def main():
-    Config = config.Config()
-    conf = Config.checkConfig()
+    log.createLog('LOG', 'CSGO-RPC Started')
+    Config = config.Config(log)
+    conf = Config.fetchConfig()
     appdata = Config.get_appdata_folder()
     rpc_client = pypresence.Presence(874499526910701598)
     address = ("127.0.0.1", conf["GSIServer"]['port'])
@@ -35,7 +40,7 @@ def main():
         data['buttons'] = []
         data['buttons'].append({"label":"View on GitHub", "url":"https://github.com/keivsc/CSGO-RPC"})
     rpc_client.update(**data)
-    systrayThread = threading.Thread(target=systray(conf).run)
+    systrayThread = threading.Thread(target=systray(Config).run)
     systrayThread.start()
     steam.run_game(appdata, conf)
     rpc = RPC(rpc_client, address, conf)

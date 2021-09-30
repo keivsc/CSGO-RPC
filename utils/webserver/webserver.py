@@ -19,7 +19,6 @@ class GSIServer(HTTPServer):
             thread.start()
             first_time = True
             while self.running == False:
-                print(self.running)
                 if first_time == True:
                     print("CS:GO GSI Server starting..")
                 first_time = False
@@ -56,6 +55,10 @@ class RequestHandler(BaseHTTPRequestHandler):
                     return self.write_response(200, bytes(json.dumps(self.server.data, indent=4), encoding='utf8'))
                 else:
                     return self.write_response(400, b"Invalid auth token")
+            
+            elif url.path == '/shutdown':
+                self.write_response(200, b"CSGO-RPC has been closed!")
+                os._exit(1)
             else:
                 return self.write_response(200, bytes("HTTP GSIServer running at http://{0}:{1}".format(self.server.server_address[0], self.server.server_address[1]), encoding='utf8'))
         except:

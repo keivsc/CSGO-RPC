@@ -125,8 +125,12 @@ class Parser:
                 gmap=loader.data['maps'][gmap]
             data['data']['map'] = {"name":gmap, "asset":asset, "mode":loader.data['gamemodes'][mode]}
             data['data']['team_scores'] = {}
-            data['data']['team_scores']['ally'] = payload['map'][f'team_{payload["player"]["team"].lower()}']['score']
-            data['data']['team_scores']['enemy'] = payload['map'][f'team_{scores[payload["player"]["team"].lower()]}']['score']
+            try:
+                data['data']['team_scores']['ally'] = payload['map'][f'team_{payload["player"]["team"].lower()}']['score']
+                data['data']['team_scores']['enemy'] = payload['map'][f'team_{scores[payload["player"]["team"].lower()]}']['score']
+            except:
+                data['data']['team_scores']['ally'] = 0
+                data['data']['team_scores']['enemy'] = 0
             try:
                 data['data']['phase'] = phases[payload['round']['phase']]
             except:
